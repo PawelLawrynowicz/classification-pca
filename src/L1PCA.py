@@ -1,9 +1,11 @@
 import sys
+from time import time
 
 import pulp
 import numpy as np
 import numpy.linalg as la
 from pulp import LpProblem, LpStatus, lpSum, LpVariable, LpAffineExpression, PULP_CBC_CMD
+from requests import Timeout
 from sklearn.datasets import load_iris
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
@@ -23,12 +25,11 @@ def solve_l1_regression(X, j):
     e_m = [LpVariable(name=f"e_m{i}", lowBound=0) for i in range(n)]
 
     for i in range(n):
-        model += (LpAffineExpression([(b[k], X[i][k]) for k in range(m)]
-                                     ) + e_p[i] - e_m[i] == 0, f"minimize for i={i}")
+        model += (LpAffineExpression([(b[k], X[i][k]) for k in range(m)]) + e_p[i] - e_m[i] == 0, f"minimize for i={i}")
     model += (b[j] == -1, f"dependent variable j = {j}")
     model += lpSum(e_p) + lpSum(e_m)
 
-    model.solve(PULP_CBC_CMD(msg=False))
+    model.solve(PULP_CBC_CMD(msg=False, timeLimit=10))
     if debug:
         print(f"status: {model.status}, {LpStatus[model.status]}")
         for var in model.variables():
